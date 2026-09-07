@@ -22,7 +22,7 @@ local Config = {
     Secret          = "BULLY1234", -- This makes the script ONLY run from the key script. Even if they copy the original obfuscated script to bypass the key, they won't be able to!
     
     -- [3] Scripts & Links
-    MainScriptURL   = "loadstring(game:HttpGet("https://gist.githubusercontent.com/angeltatgod/56179280c8092ea96f6358588fac7aeb/raw"))()", -- The raw URL of your main script
+    MainScriptURL   = "loadstring(game:HttpGet("https://raw.githubusercontent.com/angeltatgod/Key-System/refs/heads/main/Script.lua"))()", -- The raw URL of your main script
     
     -- [4] Social Media Settings (Set to true to show, false to hide)
     ShowDiscord     = false,
