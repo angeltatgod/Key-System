@@ -24,6 +24,9 @@ local Config = {
     -- [3] Scripts & Links
     MainScriptURL   = "https://raw.githubusercontent.com/angeltatgod/Key-System/refs/heads/main/Script.lua", -- The raw URL of your main script
     
+    -- [3.1] Lifetime Single-Use Keys (GitHub Raw URL)
+    LifetimeKeysURL = "https://raw.githubusercontent.com/angeltatgod/Key-System/refs/heads/main/CODE.txt",
+    
     -- [4] Social Media Settings (Set to true to show, false to hide)
     ShowDiscord     = false,
     DiscordURL      = "https://discord.gg/kT55J724BK",
@@ -122,6 +125,33 @@ local function cacheLink()
 end
 
 local function redeemKey(key)
+    -- Проверка вечного ключа из файла на GitHub
+    local successReq, response = pcall(function()
+        local req = request or http_request or syn_request or (http and http.request)
+        return req({Url = Config.LifetimeKeysURL, Method = "GET"})
+    end)
+
+    if successReq and response and response.StatusCode == 200 then
+        local found = false
+        local newLines = {}
+        
+        for line in response.Body:gmatch("[^\r\n]+") do
+            line = line:match("^%s*(.-)%s*$")
+            if line == key and key ~= "" then
+                found = true -- Ключ найден, пропускаем его добавление в новый список (удаляем)
+            elseif line ~= "" then
+                table.insert(newLines, line)
+            end
+        end
+        
+        if found then
+            -- Сохраняем ключ для авто-входа на ПК клиента
+            if writefile then writefile(Config.KeyFileName, key) end
+            return true, "Success"
+        end
+    end
+
+    -- ЕСЛИ В ФАЙЛЕ КЛЮЧА НЕТ, ИДЕТ ОБЫЧНАЯ ПРОВЕРКА PLATOBOST:
     if cachedLink == "" then
         cacheLink()
     end
@@ -444,7 +474,7 @@ local function CreateGUI()
         end)
     end)
 
-    -- Кнопка Verify (проверка ключа через PlatoBoost)
+    -- Кнопка Verify (проверка ключа)
     VerifyBtn.MouseButton1Click:Connect(function()
         local key = KeyInput.Text
         if key == "" then Status.Text = texts[currentLang].enterKey; return end
