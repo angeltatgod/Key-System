@@ -24,29 +24,16 @@ local Config = {
     -- [3] Scripts & Links
     MainScriptURL   = "https://raw.githubusercontent.com/angeltatgod/Key-System/refs/heads/main/Script.lua", -- The raw URL of your main script
     
-    -- [3.1] Lifetime Single-Use Keys (GitHub Raw URL)
-    LifetimeKeysURL = "https://raw.githubusercontent.com/angeltatgod/Key-System/refs/heads/main/CODE.txt",
-    
-    -- [4] Social Media Settings (Set to true to show, false to hide)
-    ShowDiscord     = false,
-    DiscordURL      = "https://discord.gg/kT55J724BK",
-    
-    ShowInstagram   = false,
-    InstagramURL    = "https://www.instagram.com/oyb0i/",
-    
-    ShowYoutube     = false,
-    YoutubeURL      = "https://www.youtube.com/channel/UCAlXXV1Hbvf7WbfXARuVtiQ",
-
-    -- [5] File System
+    -- [4] File System
     KeyFileName     = "Mykey.txt", -- The name of the file where the valid key will be saved for auto-login
 
-    -- [6] GUI Management
+    -- [5] GUI Management
     OldGuiName      = "anything", -- Name of the old GUI to destroy if it's already open
     MainGuiName     = "anything", -- Name of the main script's GUI to check if it's already executing
 
-    -- [7] Hub Information & UI Text
+    -- [6] Hub Information & UI Text
     HubName         = "BULLY | San Diego Border RP", -- The main title shown at the top of the GUI
-    HubDescription  = "Telegram: @bullyscript", -- The text shown below the title
+    HubDescription  = "Telegram: @BULLYSCRIPT", -- The text shown below the title
     VipGroupURL     = "https://t.me/+2rtKpUuJzcEzNTZh"
 }
 
@@ -125,33 +112,6 @@ local function cacheLink()
 end
 
 local function redeemKey(key)
-    -- Проверка вечного ключа из файла на GitHub
-    local successReq, response = pcall(function()
-        local req = request or http_request or syn_request or (http and http.request)
-        return req({Url = Config.LifetimeKeysURL, Method = "GET"})
-    end)
-
-    if successReq and response and response.StatusCode == 200 then
-        local found = false
-        local newLines = {}
-        
-        for line in response.Body:gmatch("[^\r\n]+") do
-            line = line:match("^%s*(.-)%s*$")
-            if line == key and key ~= "" then
-                found = true -- Ключ найден, пропускаем его добавление в новый список (удаляем)
-            elseif line ~= "" then
-                table.insert(newLines, line)
-            end
-        end
-        
-        if found then
-            -- Сохраняем ключ для авто-входа на ПК клиента
-            if writefile then writefile(Config.KeyFileName, key) end
-            return true, "Success"
-        end
-    end
-
-    -- ЕСЛИ В ФАЙЛЕ КЛЮЧА НЕТ, ИДЕТ ОБЫЧНАЯ ПРОВЕРКА PLATOBOST:
     if cachedLink == "" then
         cacheLink()
     end
@@ -181,12 +141,6 @@ local function redeemKey(key)
             return true, "Success"
         end
         return false, decoded.message or "Invalid Key"
-    else
-        local decoded = response and response.Body and pcall(lDecode, response.Body)
-        if type(decoded) == "table" and decoded.message and string.find(string.lower(decoded.message), "already") then
-            if writefile then writefile(Config.KeyFileName, key) end
-            return true, "Success"
-        end
     end
     return false, err or "Server Error"
 end
@@ -408,20 +362,30 @@ local function CreateGUI()
     Status.Font = Enum.Font.Gotham
     Status.TextSize = 12
 
-    -- Всплывающее уведомление (тост)
+    -- Всплывающее уведомление (тост) - вылетает из гуи вверх
     local function showToast(message)
         local existing = ScreenGui:FindFirstChild("ToastNotification")
         if existing then existing:Destroy() end
         
+        -- Позиции считаются от окна: тост вылетает из верхнего края окна вверх
+        local toastScaleX = MainFrame.Position.X.Scale
+        local toastScaleY = MainFrame.Position.Y.Scale
+        local toastX = MainFrame.Position.X.Offset + 170 -- центр окна по X
+        local startY = MainFrame.Position.Y.Offset + 40 -- старт: поверх шапки окна
+        local shownY = MainFrame.Position.Y.Offset - 60 -- вылетает на 60px выше окна
+        local endY = MainFrame.Position.Y.Offset - 110 -- улетает дальше вверх при исчезновении
+        
         local Toast = Instance.new("Frame", ScreenGui)
         Toast.Name = "ToastNotification"
         Toast.Size = UDim2.new(0, 240, 0, 45)
-        Toast.Position = UDim2.new(1, 10, 1, -60)
+        Toast.AnchorPoint = Vector2.new(0.5, 1)
+        Toast.Position = UDim2.new(toastScaleX, toastX, toastScaleY, startY)
         Toast.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        Toast.ZIndex = 20
         Instance.new("UICorner", Toast).CornerRadius = UDim.new(0, 8)
         
         local stroke = Instance.new("UIStroke", Toast)
-        stroke.Color = Color3.fromRGB(0, 200, 100)
+        stroke.Color = Color3.fromRGB(0, 170, 255)
         stroke.Thickness = 1.5
         
         local ToastText = Instance.new("TextLabel", Toast)
@@ -431,12 +395,14 @@ local function CreateGUI()
         ToastText.TextColor3 = Color3.fromRGB(255, 255, 255)
         ToastText.Font = Enum.Font.GothamBold
         ToastText.TextSize = 11
+        ToastText.ZIndex = 21
         
-        Toast:TweenPosition(UDim2.new(1, -255, 1, -60), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
+        -- Вылетает из окна вверх
+        Toast:TweenPosition(UDim2.new(toastScaleX, toastX, toastScaleY, shownY), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
         
         task.delay(2.5, function()
             if Toast and Toast.Parent then
-                Toast:TweenPosition(UDim2.new(1, 10, 1, -60), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.3, true)
+                Toast:TweenPosition(UDim2.new(toastScaleX, toastX, toastScaleY, endY), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.3, true)
                 task.wait(0.3)
                 Toast:Destroy()
             end
@@ -498,16 +464,20 @@ local function CreateGUI()
         local success, link = cacheLink()
         if success then
             fSetClipboard(link)
+            GetKeyBtn.Text = texts[currentLang].copied
             Status.Text = texts[currentLang].linkCopied
             Status.TextColor3 = Color3.fromRGB(0, 170, 255)
             showToast(texts[currentLang].toast)
+            task.delay(1, function()
+                GetKeyBtn.Text = texts[currentLang].getKey
+            end)
         else
             Status.Text = tostring(link) 
             Status.TextColor3 = Color3.fromRGB(255, 100, 100)
         end
     end)
 
-    -- Авто-вход по сохраненному ключу
+    -- Авто-вход по сохраненному ключу (с перепроверкой на сервере)
     if isfile and isfile(Config.KeyFileName) then
         local savedKey = readfile(Config.KeyFileName)
         if savedKey ~= "" then
@@ -515,11 +485,19 @@ local function CreateGUI()
             Status.Text = texts[currentLang].autoLogin
             task.spawn(function()
                 task.wait(0.3)
-                Status.Text = texts[currentLang].autoSuccess
-                Status.TextColor3 = Color3.fromRGB(0, 255, 100)
-                task.wait(0.5)
-                ScreenGui:Destroy()
-                StartMainScript()
+                local success, msg = redeemKey(savedKey)
+                if success then
+                    Status.Text = texts[currentLang].autoSuccess
+                    Status.TextColor3 = Color3.fromRGB(0, 255, 100)
+                    task.wait(0.5)
+                    ScreenGui:Destroy()
+                    StartMainScript()
+                else
+                    if delfile then pcall(delfile, Config.KeyFileName) end
+                    KeyInput.Text = ""
+                    Status.Text = tostring(msg)
+                    Status.TextColor3 = Color3.fromRGB(255, 50, 50)
+                end
             end)
         end
     end
